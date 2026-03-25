@@ -100,33 +100,29 @@
 
   <script type="module">
     import { auth, db } from "./js/firebase.js"
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"
-    import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"
+import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"
 
-    onAuthStateChanged(auth, user => {
-      if (!user) {
-        location.href = "index.html"
-        return
-      }
+onAuthStateChanged(auth, user => {
+  if (!user) {
+    location.href = "index.html"
+    return
+  }
 
-      onSnapshot(doc(db, "users", user.uid), snap => {
-        const data = snap.data()
-        const ringRequests = data?.ringRequests ?? []
-        const inbox = data?.inbox ?? []
+  onSnapshot(doc(db, "users", user.uid), snap => {
+    const data = snap.data()
+    const inbox = data?.inbox ?? []
+    const total = inbox.filter(n => !n.read).length
 
-        const unreadNotes = inbox.filter(n => !n.read).length
-        const total = ringRequests.length + unreadNotes
-
-        const badge = document.getElementById("mail-badge")
-
-        if (total > 0) {
-          badge.innerText = total
-          badge.classList.add("show")
-        } else {
-          badge.classList.remove("show")
-        }
-      })
-    })
+    const badge = document.getElementById("mail-badge")
+    if (total > 0) {
+      badge.innerText = total
+      badge.classList.add("show")
+    } else {
+      badge.classList.remove("show")
+    }
+  })
+})
   </script>
 </body>
 </html>
