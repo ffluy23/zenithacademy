@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        
+        .profile{
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #gallery img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+        }
+
+       .gallery-box {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 2px;
+        }
+
+        #gallery {
+            display: flex;
+            gap: 8px;
+        }
+
+        #gallery img {
+            border-radius: 4px;
+        }
+
+    </style>
+    <title>Profile</title>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">ZENITH RING</div>
+        </div>
+
+        <div class="screen">
+            <div class="screen-top">
+                <span>v1.0</span>
+                <div class="status">ONLINE</div>
+                <div class="battery">
+                    <div class="battery-level"></div>
+                </div>
+            </div>
+
+            <div class="profile">
+                <div id="nickname"></div>
+                <div id="coins"></div>
+            </div>
+              <div class="gallery-box">
+                <h2>Entry</h2>
+                <hr>
+                <div id="gallery"></div>
+              </div>
+        </div>
+
+        <div class="footer">Made by Sonnet with Ampharos</div>
+    </div>
+
+    <script type="module" src="../js/profile.js"></script>
+</body>
+</html>
