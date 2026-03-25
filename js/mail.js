@@ -81,7 +81,7 @@ async function renderMail() {
   listEl.innerHTML = '<div class="mail-box" id="mail-box"></div>'
   const boxEl = document.getElementById("mail-box")
 
-  // 날짜 내림차순 정렬 
+  // 날짜 내림차순 정렬 (원본 인덱스 보존)
   const sorted = inbox
     .map((item, i) => ({ item, i }))
     .sort((a, b) => (b.item.at ?? 0) - (a.item.at ?? 0))
@@ -99,6 +99,12 @@ async function renderMail() {
       div.className = `note-item ${item.read ? "read" : "unread"}`
       div.innerHTML = `📨 익명의 쪽지 · ${date}`
       div.addEventListener("click", () => openNoteModal(item, i))
+
+    } else if (item.type === "ring_request") {
+      // ── 우정반지 요청
+      div.className = `note-item ${item.read ? "read" : "unread"}`
+      div.innerHTML = `💍 <strong>${item.fromNickname}</strong>${josa(item.fromNickname, "이가")} 우정반지를 보냈어! · ${date}`
+      div.addEventListener("click", () => openRingRequestModal(item, i))
 
     } else if (item.type === "gift") {
       // ── 선물
@@ -121,6 +127,79 @@ async function renderMail() {
 
     boxEl.appendChild(div)
   })
+}
+
+// ══════════════════════════════════════════════════════
+//  우정반지 요청 모달
+// ══════════════════════════════════════════════════════
+let currentRingMailItem = null
+
+function openRingRequestModal(item, index) {
+  currentRingMailItem = item
+  document.getElementById("ring-req-from").innerText =
+    `💍 ${item.fromNickname}${josa(item.fromNickname, "이가")} 우정반지를 보냈어!`
+  document.getElementById("modal-ring-request").classList.add("open")
+  if (!item.read) markRead(item, "ring_request")
+}
+
+window.closeRingRequestModal = function() {
+  document.getElementById("modal-ring-request").classList.remove("open")
+  currentRingMailItem = null
+}
+
+window.acceptRing = async function() {
+  if (!currentRingMailItem) return
+  const mailItem = currentRingMailItem
+  try {
+    // 내 inventory에 우정반지 추가
+    const ringItem = {
+      type: "friendship_ring",
+      withUid: mailItem.fromUid,
+      withNickname: mailItem.fromNickname,
+      status: "accepted",
+      at: Date.now(),
+    }
+    await updateDoc(doc(db, "users", myUid), { inventory: arrayUnion(ringItem) })
+    // inbox에서 요청 제거
+    await updateDoc(doc(db, "users", myUid), { inbox: arrayRemove(mailItem) })
+    // 보낸 사람 inventory의 반지 status를 accepted로 업데이트
+    // (arrayRemove + arrayUnion으로 교체)
+    const senderSnap = await getDoc(doc(db, "users", mailItem.fromUid))
+    const senderInv  = senderSnap.data()?.inventory ?? []
+    const oldRing = senderInv.find(
+      i => i.type === "friendship_ring" && i.withUid === myUid && i.status === "pending"
+    )
+    if (oldRing) {
+      const newRing = { ...oldRing, status: "accepted" }
+      await updateDoc(doc(db, "users", mailItem.fromUid), {
+        inventory: arrayRemove(oldRing)
+      })
+      await updateDoc(doc(db, "users", mailItem.fromUid), {
+        inventory: arrayUnion(newRing)
+      })
+    }
+
+    showToast(`💍 ${mailItem.fromNickname}${josa(mailItem.fromNickname, "과와")}의 우정반지를 수락했어!`)
+    closeRingRequestModal()
+    await renderMail()
+  } catch(e) {
+    console.error(e)
+    showToast("수락 실패... 다시 해봐")
+  }
+}
+
+window.rejectRing = async function() {
+  if (!currentRingMailItem) return
+  const mailItem = currentRingMailItem
+  try {
+    await updateDoc(doc(db, "users", myUid), { inbox: arrayRemove(mailItem) })
+    showToast("반지 요청을 거절했어.")
+    closeRingRequestModal()
+    await renderMail()
+  } catch(e) {
+    console.error(e)
+    showToast("처리 실패...")
+  }
 }
 
 // ══════════════════════════════════════════════════════
@@ -173,6 +252,7 @@ function openGiftViewModal(item, index) {
 
 // ══════════════════════════════════════════════════════
 //  읽음 처리
+//  arrayRemove + arrayUnion으로 read:true 업데이트
 // ══════════════════════════════════════════════════════
 async function markRead(item, type) {
   if (item.read) return
@@ -212,7 +292,7 @@ window.acceptGift = async function() {
 }
 
 // ══════════════════════════════════════════════════════
-//  선물 거절 
+//  선물 거절 (inbox에서만 제거)
 // ══════════════════════════════════════════════════════
 window.rejectGift = async function() {
   if (!currentGiftMailItem) return
