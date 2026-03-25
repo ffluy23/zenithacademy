@@ -32,7 +32,7 @@ export const moves = {
   "할퀴기":         { power: 40, type: "노말", accuracy: 100, alwaysHit: false, effect: null },
   "속이기":         { power: 30, type: "노말", accuracy: 50, alwaysHit: false, skipEvasion: true, effect: { chance: 1, volatile: "풀죽음" }},
   "울음소리":       { power: 0, type: "노말", accuracy: 100, alwaysHit: false, effect: null, rank: { targetAtk: -1 } },
-  "뽐내기":         { power: 0, type: "노말", accuracy: 85, alwaysHit: false, effect: null, rank: { targetAtk: 2 }, effect: { chance: 1, volatile: "혼란" } },
+  "뽐내기": { power: 0, type: "노말", accuracy: 85, alwaysHit: false, rank: { targetAtk: 2 }, effect: { chance: 1, volatile: "혼란" } },
 
   // ───── 불 ─────
   "화염방사": { power: 50, type: "불", accuracy: 100, alwaysHit: false, effect: { chance: 0.1, status: "화상" } },
