@@ -76,7 +76,7 @@ function drawTitle() {
     cum += entry.rate
     if (rand < cum) return { name: entry.name, grade: entry.grade }
   }
-  return { name: TITLES_NORMAL[0], grade: "N" } // 부동소수점 안전망
+  return { name: TITLES_NORMAL[0], grade: "N" }
 }
 
 /** 칭호 이름으로 등급 조회 */
@@ -244,7 +244,6 @@ window.buyRing = async function() {
   }
   const request = { fromUid: myUid, fromNickname: myData.nickname, at: now }
 
-  // 받는 사람 inbox에 반지 요청 알림 추가 (mail.js에서 표시)
   const inboxRingItem = {
     type: "ring_request",
     fromUid: myUid,
@@ -264,7 +263,7 @@ window.buyRing = async function() {
 }
 
 // ══════════════════════════════════════════════════════
-//  구매: 랜덤 칭호 (등급제)
+//  구매: 랜덤 칭호 (등급제 + 누적 + 중복 시 50ZP 반환)
 // ══════════════════════════════════════════════════════
 window.buyTitle = async function() {
   const ok = await spendCoins(500)
@@ -274,26 +273,56 @@ window.buyTitle = async function() {
 
   const { name: picked, grade } = drawTitle()
 
-  await updateDoc(doc(db, "users", myUid), { activeTitle: picked })
-  myData.activeTitle = picked
+  // 현재 보유 칭호 목록 확인
+  const snap        = await getDoc(doc(db, "users", myUid))
+  const ownedTitles = snap.data()?.titles ?? []
+  const isDuplicate = ownedTitles.includes(picked)
 
+  const updates = {}
+
+  if (isDuplicate) {
+    // 중복 → 50ZP 반환, 칭호 목록 변경 없음
+    await updateDoc(doc(db, "users", myUid), { coins: increment(50) })
+    myData.coins = (myData.coins ?? 0) + 50
+    updateCoinDisplay()
+  } else {
+    // 신규 → titles 배열에 추가, activeTitle이 없으면 자동 장착
+    updates.titles = arrayUnion(picked)
+    if (!snap.data()?.activeTitle) updates.activeTitle = picked
+    await updateDoc(doc(db, "users", myUid), updates)
+    myData.titles     = [...ownedTitles, picked]
+    myData.activeTitle = snap.data()?.activeTitle || picked
+  }
+
+  // 결과 표시
   const resultEl   = document.getElementById("gacha-result")
   const gradeColor = GRADE_COLOR[grade]
   const gradeLabel = GRADE_LABEL[grade]
   const isRare     = grade !== "N"
 
   resultEl.className = "show"
-  resultEl.innerHTML = `
-    ${isRare
-      ? `<div style="font-size:11px;font-weight:bold;color:${gradeColor};letter-spacing:1px;margin-bottom:4px;">${gradeLabel}</div>`
+
+  if (isDuplicate) {
+    resultEl.innerHTML = `
+      ${isRare
+        ? `<div style="font-size:11px;font-weight:bold;color:${gradeColor};letter-spacing:1px;margin-bottom:4px;">${gradeLabel}</div>`
+        : ""}
+      <div style="font-size:17px;font-weight:bold;color:${gradeColor};">[${picked}]</div>
+      <div style="font-size:13px;color:#e07b00;margin-top:8px;font-weight:bold;">이미 보유 중! 💰 50ZP 반환</div>
+    `
+  } else {
+    resultEl.innerHTML = `
+      ${isRare
+        ? `<div style="font-size:11px;font-weight:bold;color:${gradeColor};letter-spacing:1px;margin-bottom:4px;">${gradeLabel}</div>`
+        : ""}
+      <div style="font-size:17px;font-weight:bold;color:${gradeColor};">[${picked}]</div>
+      <div style="font-size:13px;color:#555;margin-top:6px;">새 칭호 획득!</div>
+      ${grade === "S" ? `<div style="font-size:22px;margin-top:4px;">🎊</div>`
+      : grade === "A" ? `<div style="font-size:22px;margin-top:4px;">🎉</div>`
+      : grade === "B" ? `<div style="font-size:22px;margin-top:4px;">✨</div>`
       : ""}
-    <div style="font-size:17px;font-weight:bold;color:${gradeColor};">[${picked}]</div>
-    <div style="font-size:13px;color:#555;margin-top:6px;">칭호 적용!</div>
-    ${grade === "S" ? `<div style="font-size:22px;margin-top:4px;">🎊</div>`
-    : grade === "A" ? `<div style="font-size:22px;margin-top:4px;">🎉</div>`
-    : grade === "B" ? `<div style="font-size:22px;margin-top:4px;">✨</div>`
-    : ""}
-  `
+    `
+  }
 }
 
 // ══════════════════════════════════════════════════════
@@ -391,33 +420,74 @@ async function renderInventory() {
 }
 
 // ══════════════════════════════════════════════════════
-//  칭호 탭 렌더
+//  칭호 탭 렌더 (누적 목록 + 장착 전환)
 // ══════════════════════════════════════════════════════
 async function renderTitle() {
-  const snap   = await getDoc(doc(db, "users", myUid))
-  const active = snap.data()?.activeTitle ?? null
-  const el     = document.getElementById("title-display")
+  const snap        = await getDoc(doc(db, "users", myUid))
+  const active      = snap.data()?.activeTitle ?? null
+  const ownedTitles = snap.data()?.titles ?? []
+  const el          = document.getElementById("title-display")
 
-  if (!active) {
+  if (ownedTitles.length === 0) {
     el.innerHTML = "<p>아직 칭호가 없어. 매점에서 뽑아봐!</p>"
     return
   }
 
-  const grade      = getTitleGrade(active)
-  const gradeLabel = GRADE_LABEL[grade]
-  const gradeColor = GRADE_COLOR[grade]
-  const isRare     = grade !== "N"
+  // 현재 장착 중 칭호 표시
+  let headerHtml = ""
+  if (active) {
+    const grade      = getTitleGrade(active)
+    const gradeColor = GRADE_COLOR[grade]
+    const gradeLabel = GRADE_LABEL[grade]
+    const isRare     = grade !== "N"
+    headerHtml = `
+      <div style="margin-bottom:16px;padding:10px 12px;background:#f9f9f9;border-radius:8px;">
+        <span style="font-size:12px;color:#999;">장착 중</span><br>
+        ${isRare ? `<span style="font-size:11px;font-weight:bold;color:${gradeColor};">${gradeLabel} </span>` : ""}
+        <strong style="color:${gradeColor};">[${active}]</strong>
+      </div>
+    `
+  }
 
-  el.innerHTML = `
-    <p>
-      현재 칭호:
-      ${isRare
-        ? `<span style="font-size:11px;font-weight:bold;color:${gradeColor};margin-right:2px;">${gradeLabel}</span>`
-        : ""}
-      <strong style="color:${gradeColor};">[${active}]</strong>
-    </p>
-    <p style="font-size:13px;color:#777;">매점에서 다시 뽑으면 새 칭호로 교체돼.</p>
-  `
+  // 보유 칭호 목록 (알파벳/가나다 정렬은 뽑은 순 유지)
+  const listHtml = ownedTitles.map(title => {
+    const grade      = getTitleGrade(title)
+    const gradeColor = GRADE_COLOR[grade]
+    const gradeLabel = GRADE_LABEL[grade]
+    const isRare     = grade !== "N"
+    const isActive   = title === active
+
+    return `
+      <div class="title-item ${isActive ? "title-active" : ""}"
+           onclick="equipTitle('${title.replace(/'/g, "\\'")}')">
+        <span>
+          ${isRare ? `<span style="font-size:11px;font-weight:bold;color:${gradeColor};margin-right:3px;">${gradeLabel}</span>` : ""}
+          <span style="color:${gradeColor};font-weight:${isRare ? "bold" : "normal"};">[${title}]</span>
+        </span>
+        ${isActive
+          ? `<span class="title-equipped-badge">장착 중</span>`
+          : `<span class="title-equip-btn">장착</span>`
+        }
+      </div>
+    `
+  }).join("")
+
+  el.innerHTML = headerHtml + `<div class="title-list">${listHtml}</div>`
+}
+
+// ══════════════════════════════════════════════════════
+//  칭호 장착
+// ══════════════════════════════════════════════════════
+window.equipTitle = async function(title) {
+  try {
+    await updateDoc(doc(db, "users", myUid), { activeTitle: title })
+    myData.activeTitle = title
+    showToast(`[${title}] 칭호를 장착했어!`)
+    renderTitle()
+  } catch(e) {
+    console.error(e)
+    showToast("칭호 장착 실패... 다시 해봐")
+  }
 }
 
 // ══════════════════════════════════════════════════════
