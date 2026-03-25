@@ -1,0 +1,11 @@
+@import url('https://cdn.jsdelivr.net/gh/MonadABXY/mona-font/web/mona.css');
+
+body{
+font-family: 'Mona12', sans-serif;
+padding: 0;
+margin: 0;
+}
+
+button {
+    font-family: 'Mona12', sans-serif;
+}
