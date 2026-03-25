@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<style>
+    h2{
+        text-align: center;
+    }
+
+    .login-box{
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+    }
+
+    input{
+        font-family: 'Mona12', sans-serif;
+        width: 60%;
+        padding: 2%;
+    }
+
+    .btn#loginBtn{
+        display: flex;
+        width: 65%;
+        font-family: 'Mona12', sans-serif;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 9px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        background: #e9ecef;
+        border: 2px solid #ced4da;
+        box-shadow: 2px 2px 0 #adb5bd;
+        transition: 0.1s;
+        color: #495057;
+    }
+</style>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="title">ZENITH RING</div>
+  </div>
+
+  <div class="screen">
+    <div class="screen-top">
+        <span>v1.0</span>
+            <div class="status">ONLINE</div>
+            <div class="battery">
+                <div class="battery-level"></div>
+            </div>
+    </div>
+      <h2>Login</h2>
+      <div class="login-box">
+        <input id="email" type="email" placeholder="email">
+        <input id="password" type="password" placeholder="password">
+        <button class="btn" id="loginBtn">ENTER</button>
+      </div>
+  </div>
+  <div class="footer">Made by Sonnet with Ampharos</div>
+</div>
+
+
+<script type="module" src="js/main.js"></script>
+
+</body>
+</html>
