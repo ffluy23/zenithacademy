@@ -10,7 +10,7 @@ import {
 // ══════════════════════════════════════════════════════
 //  BERRY DATA 
 // ══════════════════════════════════════════════════════
-const BASE = 'https://scary-fuchsia-lfntira4xr.edgeone.app/'
+const BASE = 'https://surrounding-crimson-gbhey74qkn.edgeone.app/'
 const BERRIES = [
   { id:'cheri',  img: BASE+'cheriberry.png',  name:'버치열매', spicy:+1,dry:0, sweet:0, bitter:0, sour:-1 },
   { id:'chesto', img: BASE+'chestoberry.png', name:'유루열매', spicy:-1,dry:+1,sweet:0, bitter:0, sour:0  },
