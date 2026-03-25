@@ -32,7 +32,7 @@ export const moves = {
   "할퀴기":         { power: 40, type: "노말", accuracy: 100, alwaysHit: false, effect: null },
   "속이기":         { power: 30, type: "노말", accuracy: 50, alwaysHit: false, skipEvasion: true, effect: { chance: 1, volatile: "풀죽음" }},
   "울음소리":       { power: 0, type: "노말", accuracy: 100, alwaysHit: false, effect: null, rank: { targetAtk: -1 } },
-  "뽐내기": { power: 0, type: "노말", accuracy: 85, alwaysHit: false, rank: { targetAtk: 2 }, effect: { chance: 1, volatile: "혼란" } },
+  "뽐내기":         { power: 0, type: "노말", accuracy: 85, alwaysHit: false, effect: null, rank: { targetAtk: 2 }, effect: { chance: 1, volatile: "혼란" } },
 
   // ───── 불 ─────
   "화염방사": { power: 50, type: "불", accuracy: 100, alwaysHit: false, effect: { chance: 0.1, status: "화상" } },
@@ -100,7 +100,7 @@ export const moves = {
   // ───── 에스퍼 ─────
   "사이코키네시스": { power: 40, type: "에스퍼", accuracy: 100, alwaysHit: false, effect: null },
   "미래예지":       { power: 40, type: "에스퍼", accuracy: 100, alwaysHit: false, effect: null },
-  "원시의힘":   { power: 40, type: "에스퍼", accuracy: 100, alwaysHit: true, effect: null, rank: { chance: 1, atk: 1, def: 1} },
+  "명상":           { power: 0, type: "에스퍼", accuracy: 100, alwaysHit: true, effect: null, rank: { chance: 1, atk: 1, def: 1} },
 
   // ───── 벌레 ─────
   "버그버즈":   { power: 40, type: "벌레", accuracy: 100, alwaysHit: false, effect: null },
