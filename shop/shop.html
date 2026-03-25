@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>상점</title>
+  <title>매점</title>
   <link rel="stylesheet" href="../css/style.css" />
   <style>
     p{
@@ -115,6 +115,54 @@
     }
     #gift-item-info p { margin: 0; }
 
+    /* ── 칭호 탭 ── */
+    #tab-title { max-height: 440px; overflow-y: auto; }
+
+    .title-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .title-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    .title-item:hover { background: #f7f7f7; }
+    .title-item.title-active {
+      border-color: #bbb;
+      background: #fafafa;
+    }
+
+    .title-equip-btn {
+      font-size: 12px;
+      color: #888;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 3px 8px;
+      flex-shrink: 0;
+    }
+    .title-item:hover .title-equip-btn {
+      border-color: #aaa;
+      color: #555;
+    }
+
+    .title-equipped-badge {
+      font-size: 11px;
+      color: #fff;
+      background: #555;
+      border-radius: 4px;
+      padding: 3px 8px;
+      flex-shrink: 0;
+    }
+
     @media (max-width: 480px) {
   /* 상단 버튼 + 코인 */
   .shop-top {
@@ -177,6 +225,12 @@
   .modal-box h4 {
     font-size: 14px;
   }
+
+  /* 칭호 아이템 */
+  .title-item {
+    font-size: 13px;
+    padding: 9px 10px;
+  }
 }
   </style>
 </head>
@@ -205,7 +259,7 @@
       <button class="tab-btn"        onclick="switchTab('title', this)">칭호</button>
     </div>
 
-    <!-- ── 상점 탭 ── -->
+    <!-- ── 매점 탭 ── -->
     <div id="tab-shop" class="tab-content active">
       <div class="item-card">
         <h4>우정반지</h4>
@@ -263,7 +317,8 @@
   <div class="modal-box">
     <h4>랜덤 칭호 뽑기</h4>
     <p>칭호를 무작위로 뽑을 수 있는 뽑기<br>
-    어떤 칭호가 나올지는 알 수 없다</p>
+    어떤 칭호가 나올지는 알 수 없다<br>
+    <span style="font-size:12px;color:#e07b00;">중복 시 50ZP 반환</span></p>
     <div id="gacha-result"></div>
     <div class="btn-row">
       <button onclick="closeModal('title')">닫기</button>
