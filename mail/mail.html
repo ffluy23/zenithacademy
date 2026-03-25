@@ -78,17 +78,6 @@
       color: #aaa;
       border-color: #ddd;
     }
-
-    @media (max-width: 480px) {
-  .mail-box {
-    max-height: none;
-    overflow-y: auto;
-  }
-
-  .screen {
-    overflow-y: auto;
-  }
-}
   </style>
 </head>
 <body>
@@ -107,6 +96,19 @@
     <div id="mail-list" class="mail-list">Loading...</div>
   </div>
   <div class="footer">Made by Sonnet with Ampharos</div>
+</div>
+
+<!-- ── 모달: 우정반지 요청 ── -->
+<div id="modal-ring-request" class="modal-overlay">
+  <div class="modal-box">
+    <h3>💍 우정반지 도착!</h3>
+    <p id="ring-req-from" style="font-size:15px;margin:0 0 16px;"></p>
+    <p style="font-size:12px;color:#aaa;margin:0 0 4px;">수락하면 양쪽 가방에 우정반지가 생겨!</p>
+    <div class="btn-row">
+      <button onclick="rejectRing()" style="color:#aaa;">거절</button>
+      <button onclick="acceptRing()">수락 💍</button>
+    </div>
+  </div>
 </div>
 
 <!-- ── 모달: 쪽지 내용 보기 ── -->
