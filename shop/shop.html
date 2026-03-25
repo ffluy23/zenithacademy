@@ -114,6 +114,70 @@
       font-size: 14px;
     }
     #gift-item-info p { margin: 0; }
+
+    @media (max-width: 480px) {
+  /* 상단 버튼 + 코인 */
+  .shop-top {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .shop-top .back-btn {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+  #user-coins {
+    font-size: 13px;
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+  /* 탭 버튼 */
+  .tab-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  /* 상점 그리드: 2열 → 1열 */
+  #tab-shop.active {
+    grid-template-columns: 1fr;
+    max-height: none;
+  }
+
+  /* 가방/칭호 탭 높이 제한 해제 */
+  #tab-inventory,
+  #tab-title {
+    max-height: none;
+  }
+
+  /* 아이템 카드 */
+  .item-card {
+    padding: 12px;
+    margin-bottom: 8px;
+  }
+  .item-card h4 {
+    font-size: 13px;
+    margin-bottom: 2px;
+  }
+  .item-card .price {
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+
+  /* 구매 버튼 */
+  .buy {
+    width: 100%;
+    padding: 8px;
+    font-size: 13px;
+  }
+
+  /* 모달 */
+  .modal-box {
+    padding: 16px;
+  }
+  .modal-box h4 {
+    font-size: 14px;
+  }
+}
   </style>
 </head>
 <body>
