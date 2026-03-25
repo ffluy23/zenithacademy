@@ -208,7 +208,7 @@ window.searchUser = async function(type) {
   const resultEl = document.getElementById(resultId)
 
   if (snap.empty) {
-    resultEl.innerText = "그런 사람은 아카데미에 없는 듯하다..."
+    resultEl.innerText = "그런 사람은 아카데미에 없어..."
     document.getElementById(confirmBtnId).disabled = true
     foundUserUid = null; foundUserNickname = null
     return
@@ -222,7 +222,7 @@ window.searchUser = async function(type) {
   }
   foundUserUid      = found.id
   foundUserNickname = found.data().nickname
-  resultEl.innerText = `✅ ${foundUserNickname} 찾았다!`
+  resultEl.innerText = `✅ ${foundUserNickname} 찾았어!`
   document.getElementById(confirmBtnId).disabled = false
 }
 
@@ -244,10 +244,22 @@ window.buyRing = async function() {
   }
   const request = { fromUid: myUid, fromNickname: myData.nickname, at: now }
 
-  await updateDoc(doc(db, "users", myUid), { inventory: arrayUnion(myRingItem) })
-  await setDoc(doc(db, "users", foundUserUid), { ringRequests: arrayUnion(request) }, { merge: true })
+  // 받는 사람 inbox에 반지 요청 알림 추가 (mail.js에서 표시)
+  const inboxRingItem = {
+    type: "ring_request",
+    fromUid: myUid,
+    fromNickname: myData.nickname,
+    at: now,
+    read: false,
+  }
 
-  showToast(`💍 ${foundUserNickname}에게 우정반지를 보냈다! 이제 수락을 기다리자.`)
+  await updateDoc(doc(db, "users", myUid), { inventory: arrayUnion(myRingItem) })
+  await setDoc(doc(db, "users", foundUserUid), {
+    ringRequests: arrayUnion(request),
+    inbox: arrayUnion(inboxRingItem),
+  }, { merge: true })
+
+  showToast(`💍 ${foundUserNickname}에게 우정반지를 보냈어! 상대방의 수락을 기다려봐.`)
   closeModal("ring")
 }
 
@@ -298,7 +310,7 @@ window.buyNote = async function() {
   const noteItem = { type: "note", text, at: Date.now(), read: false }
   await setDoc(doc(db, "users", foundUserUid), { inbox: arrayUnion(noteItem) }, { merge: true })
 
-  showToast(`📨 ${foundUserNickname}에게 쪽지${josa("쪽지", "을를")} 보냈다!`)
+  showToast(`📨 ${foundUserNickname}에게 쪽지${josa("쪽지", "을를")} 보냈어!`)
   closeModal("note")
 }
 
@@ -326,7 +338,7 @@ async function renderInventory() {
   const items = snap.data()?.inventory ?? []
   const el    = document.getElementById("inventory-list")
 
-  if (items.length === 0) { el.innerHTML = "<p>가방이 비어있다!</p>"; return }
+  if (items.length === 0) { el.innerHTML = "<p>가방이 비어있어.</p>"; return }
 
   el.innerHTML = ""
   const sorted = items
@@ -387,7 +399,7 @@ async function renderTitle() {
   const el     = document.getElementById("title-display")
 
   if (!active) {
-    el.innerHTML = "<p>아직 칭호가 없다. 매점에서 뽑아볼까?</p>"
+    el.innerHTML = "<p>아직 칭호가 없어. 매점에서 뽑아봐!</p>"
     return
   }
 
@@ -404,7 +416,7 @@ async function renderTitle() {
         : ""}
       <strong style="color:${gradeColor};">[${active}]</strong>
     </p>
-    <p style="font-size:13px;color:#777;">다시 뽑으면 새 칭호로 교체된다.</p>
+    <p style="font-size:13px;color:#777;">매점에서 다시 뽑으면 새 칭호로 교체돼.</p>
   `
 }
 
@@ -448,7 +460,7 @@ window.searchGiftUser = async function() {
   const resultEl = document.getElementById("gift-result")
 
   if (snap.empty) {
-    resultEl.innerText = "그런 사람은 아카데미에 없는 듯하다..."
+    resultEl.innerText = "그런 사람은 아카데미에 없어..."
     document.getElementById("gift-confirm-btn").disabled = true
     giftFoundUid = null; giftFoundNickname = null
     return
@@ -462,7 +474,7 @@ window.searchGiftUser = async function() {
   }
   giftFoundUid      = found.id
   giftFoundNickname = found.data().nickname
-  resultEl.innerText = `✅ ${giftFoundNickname} 찾았다!`
+  resultEl.innerText = `✅ ${giftFoundNickname} 찾았어!`
   document.getElementById("gift-confirm-btn").disabled = false
 }
 
@@ -485,7 +497,7 @@ window.sendGift = async function() {
     )
     await updateDoc(doc(db, "users", myUid), { inventory: arrayRemove(giftTargetObj) })
 
-    showToast(`🎁 ${giftFoundNickname}에게 선물${josa("선물", "을를")} 보냈다!`)
+    showToast(`🎁 ${giftFoundNickname}에게 선물${josa("선물", "을를")} 보냈어!`)
     closeGiftModal()
     renderInventory()
   } catch(e) {
