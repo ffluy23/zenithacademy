@@ -59,15 +59,18 @@
     text-transform: uppercase;
   }
 
-  .game-log-box {
-  max-height: 158px;
-  overflow-y: auto;
+ .game-log-box {
+  max-height: 30vh;
   -webkit-overflow-scrolling: touch;
 }
+.screen {
+  overflow-y: auto;
+}
+#game-log-list {
+  display: flex; flex-direction: column; gap: 6px;
+  padding-bottom: 15px;
+}
 
-  #game-log-list {
-    display: flex; flex-direction: column; gap: 6px;
-  }
   .game-log-item {
     display: flex; flex-direction: column; gap: 4px;
     padding: 10px 14px;
