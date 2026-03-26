@@ -70,8 +70,15 @@ function tickMyRanks(pokemon) {
   return msgs
 }
 
-// ── 랭크 기술 스택 초기화
-// 다른 행동(공격/교체/행동불가) 시 호출
+// ── 랭크 스택 정보만 초기화 (랭크 값은 유지 → tick이 처리)
+// 공격 기술 사용 시 호출
+function clearRankStack(pokemon) {
+  pokemon.lastRankMove = null
+  pokemon.rankStack    = 0
+}
+
+// ── 랭크 스택 + 랭크 값 전부 초기화
+// 교체/행동불가/혼란 자해 시 호출
 function resetRankStack(pokemon) {
   pokemon.lastRankMove = null
   pokemon.rankStack    = 0
@@ -120,33 +127,33 @@ function applyRankChanges(r, self, target, moveName) {
   if (r.atk !== undefined) {
     if (r.atk > 0) {
       const prev = selfR.atk
-      selfR.atk = Math.min(4, selfR.atk + r.atk); selfR.atkTurns = r.turns ?? 1
+      selfR.atk = Math.min(4, selfR.atk + r.atk); selfR.atkTurns = r.turns ?? 2
       msgs.push(`${self.name}의 공격이 올라갔다! (+${selfR.atk - prev})`)
     } else if (r.atk < 0) {
       if (selfR.atk === 0) msgs.push(`${self.name}의 공격은 더 이상 내려가지 않는다!`)
-      else { const prev = selfR.atk; selfR.atk = Math.max(0, selfR.atk + r.atk); selfR.atkTurns = r.turns ?? 1; msgs.push(`${self.name}의 공격이 내려갔다! (${selfR.atk - prev})`) }
+      else { const prev = selfR.atk; selfR.atk = Math.max(0, selfR.atk + r.atk); selfR.atkTurns = r.turns ?? 2; msgs.push(`${self.name}의 공격이 내려갔다! (${selfR.atk - prev})`) }
     }
   }
   // 자신 방어 랭크
   if (r.def !== undefined) {
     if (r.def > 0) {
       const prev = selfR.def
-      selfR.def = Math.min(3, selfR.def + r.def); selfR.defTurns = r.turns ?? 1
+      selfR.def = Math.min(3, selfR.def + r.def); selfR.defTurns = r.turns ?? 2
       msgs.push(`${self.name}의 방어가 올라갔다! (+${selfR.def - prev})`)
     } else if (r.def < 0) {
       if (selfR.def === 0) msgs.push(`${self.name}의 방어는 더 이상 내려가지 않는다!`)
-      else { const prev = selfR.def; selfR.def = Math.max(0, selfR.def + r.def); selfR.defTurns = r.turns ?? 1; msgs.push(`${self.name}의 방어가 내려갔다! (${selfR.def - prev})`) }
+      else { const prev = selfR.def; selfR.def = Math.max(0, selfR.def + r.def); selfR.defTurns = r.turns ?? 2; msgs.push(`${self.name}의 방어가 내려갔다! (${selfR.def - prev})`) }
     }
   }
   // 자신 스피드 랭크
   if (r.spd !== undefined) {
     if (r.spd > 0) {
       const prev = selfR.spd
-      selfR.spd = Math.min(5, selfR.spd + r.spd); selfR.spdTurns = r.turns ?? 1
+      selfR.spd = Math.min(5, selfR.spd + r.spd); selfR.spdTurns = r.turns ?? 2
       msgs.push(`${self.name}의 스피드가 올라갔다! (+${selfR.spd - prev}%p)`)
     } else if (r.spd < 0) {
       if (selfR.spd === 0) msgs.push(`${self.name}의 스피드는 더 이상 내려가지 않는다!`)
-      else { const prev = selfR.spd; selfR.spd = Math.max(0, selfR.spd + r.spd); selfR.spdTurns = r.turns ?? 1; msgs.push(`${self.name}의 스피드가 내려갔다! (${selfR.spd - prev}%p)`) }
+      else { const prev = selfR.spd; selfR.spd = Math.max(0, selfR.spd + r.spd); selfR.spdTurns = r.turns ?? 2; msgs.push(`${self.name}의 스피드가 내려갔다! (${selfR.spd - prev}%p)`) }
     }
   }
 
@@ -648,9 +655,6 @@ async function useMove(moveIdx, data) {
   }
 
   // ── power > 0 → 공격 기술
-  // 공격 기술 사용 시 랭크 스택 초기화
-  resetRankStack(myPokemon)
-
   const atkRank = getActiveRank(myPokemon, "atk"), defRankEne = getActiveRank(enePokemon, "def")
   let expiredMsgs = []
 
@@ -687,8 +691,9 @@ async function useMove(moveIdx, data) {
   const weatherResult = applyWeatherEffect(moveInfo?.effect)
   if (weatherResult.weather) { for (const msg of weatherResult.msgs) { await addLog(msg); await wait(280) } }
 
-  // 데미지 처리 후 tick
+  // 데미지 처리 후 tick → 그다음 스택 초기화
   expiredMsgs = tickMyRanks(myPokemon)
+  clearRankStack(myPokemon)
 
   const nextTurn = (freshData.turn_count ?? 1) + 1
   if (nextTurn % 2 === 0) {
