@@ -268,9 +268,6 @@ function listenLogs() {
   })
 }
 
-// ══════════════════════════════════════════════════════
-//  승리 보상: 이긴 사람 클라이언트에서만 지급
-// ══════════════════════════════════════════════════════
 async function grantWinCoins(winnerName, data) {
   if (isSpectator) return
   const myName = mySlot === "p1" ? data.player1_name : data.player2_name
@@ -612,6 +609,7 @@ async function useMove(moveIdx, data) {
   await animateDiceSingle(mySlot, diceRoll, freshData.player1_name, freshData.player2_name)
   await updateDoc(roomRef, { dice_event: null })
 
+  // ── power: 0 → 랭크 전용 기술
   if (!moveInfo?.power) {
     const r = moveInfo?.rank
     const targetsEnemy = r && (r.targetAtk !== undefined || r.targetDef !== undefined || r.targetSpd !== undefined)
@@ -639,9 +637,12 @@ async function useMove(moveIdx, data) {
       }
     }
 
+    // 랭크 적용 (tick 없음 — 랭크 기술 사용 시는 tick 안 함)
     const rankMsgs = applyRankChanges(r, myPokemon, enePokemon)
-    rankMsgs.push(...tickMyRanks(myPokemon))
     for (const msg of rankMsgs) { await addLog(msg); await wait(300) }
+    // effect 처리 (혼란 등)
+    const rankEffectMsgs = applyMoveEffect(moveInfo?.effect, myPokemon, enePokemon, 0)
+    for (const msg of rankEffectMsgs) { await addLog(msg); await wait(280) }
     await updateDoc(roomRef, {
       [`${mySlot}_entry`]: myEntry, [`${enemySlot}_entry`]: enemyEntry,
       current_turn: enemySlot, turn_count: (freshData.turn_count ?? 1) + 1
@@ -649,8 +650,10 @@ async function useMove(moveIdx, data) {
     return
   }
 
+  // ── power > 0 → 공격 기술
+  // 랭크는 데미지 계산에 쓰고, tick은 데미지 후에
   const atkRank = getActiveRank(myPokemon, "atk"), defRankEne = getActiveRank(enePokemon, "def")
-  const expiredMsgs = tickMyRanks(myPokemon)
+  let expiredMsgs = []  // tick은 데미지 후에 실행
 
   await triggerAttackEffect("my", "enemy")
 
@@ -697,6 +700,9 @@ async function useMove(moveIdx, data) {
 
   const weatherResult = applyWeatherEffect(moveInfo?.effect)
   if (weatherResult.weather) { for (const msg of weatherResult.msgs) { await addLog(msg); await wait(280) } }
+
+  // 데미지 다 처리한 후 tick
+  expiredMsgs = tickMyRanks(myPokemon)
 
   const nextTurn = (freshData.turn_count ?? 1) + 1
   if (nextTurn % 2 === 0) {
