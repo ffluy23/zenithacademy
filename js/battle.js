@@ -629,6 +629,7 @@ async function useMove(moveIdx, data) {
   if (!moveInfo?.power) {
     const r = moveInfo?.rank
     const targetsEnemy = r && (r.targetAtk !== undefined || r.targetDef !== undefined || r.targetSpd !== undefined)
+    || moveInfo?.targetSelf === false
 
     if (targetsEnemy) {
       const { hit, hitType } = calcHit(myPokemon, moveInfo, enePokemon)
