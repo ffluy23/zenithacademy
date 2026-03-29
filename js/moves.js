@@ -108,7 +108,7 @@ export const moves = {
   "쪼기":       { power: 40, type: "비행", accuracy: 100, alwaysHit: false, effect: null },
 
   // ───── 에스퍼 ─────
-  "사이코키네시스": { power: 40, type: "에스퍼", accuracy: 100, alwaysHit: false, effect: null,  },
+  "사이코키네시스": { power: 50, type: "에스퍼", accuracy: 100, alwaysHit: false, effect: null,  },
   "염동력": { power: 40, type: "에스퍼", accuracy: 100, alwaysHit: false, effect: { chance: 0.1, volatile: "혼란" }, rank: { targetDef: -1, turns: 1 } },
   "미래예지":       { power: 40, type: "에스퍼", accuracy: 100, alwaysHit: false, effect: null },
 
