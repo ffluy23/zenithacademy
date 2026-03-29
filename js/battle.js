@@ -70,15 +70,11 @@ function tickMyRanks(pokemon) {
   return msgs
 }
 
-// ── 랭크 스택 정보만 초기화 (랭크 값은 유지 → tick이 처리)
-// 공격 기술 사용 시 호출
 function clearRankStack(pokemon) {
   pokemon.lastRankMove = null
   pokemon.rankStack    = 0
 }
 
-// ── 랭크 스택 + 랭크 값 전부 초기화
-// 교체/행동불가/혼란 자해 시 호출
 function resetRankStack(pokemon) {
   pokemon.lastRankMove = null
   pokemon.rankStack    = 0
@@ -89,9 +85,6 @@ function resetRankStack(pokemon) {
   }
 }
 
-// ── 랭크 변화 처리
-// 같은 기술 연속: 2스택까지 중첩, 3번째는 초기화 후 새로 시작
-// 다른 기술/행동: 위에서 resetRankStack 후 이미 초기화된 상태
 function applyRankChanges(r, self, target, moveName) {
   if (!r) return []
   const msgs = []
@@ -102,28 +95,23 @@ function applyRankChanges(r, self, target, moveName) {
   const selfR   = { ...defaultRanks(), ...(self.ranks   ?? {}) }
   const targetR = { ...defaultRanks(), ...(target.ranks ?? {}) }
 
-  // ── 자신 대상 랭크 (스택 관리)
   const isSameMove = moveName && self.lastRankMove === moveName
   const stack = self.rankStack ?? 0
 
   if (moveName) {
     if (!isSameMove) {
-      // 다른 기술 → 이미 resetRankStack됐으므로 stack=0에서 시작
       self.lastRankMove = moveName
       self.rankStack    = 1
     } else if (stack >= 2) {
-      // 3번째 → 초기화 후 새로 시작
       selfR.atk = 0; selfR.atkTurns = 0
       selfR.def = 0; selfR.defTurns = 0
       selfR.spd = 0; selfR.spdTurns = 0
       self.rankStack = 1
     } else {
-      // 2번째 → 중첩
       self.rankStack = stack + 1
     }
   }
 
-  // 자신 공격 랭크
   if (r.atk !== undefined) {
     if (r.atk > 0) {
       const prev = selfR.atk
@@ -134,7 +122,6 @@ function applyRankChanges(r, self, target, moveName) {
       else { const prev = selfR.atk; selfR.atk = Math.max(0, selfR.atk + r.atk); selfR.atkTurns = r.turns ?? 2; msgs.push(`${self.name}의 공격이 내려갔다! (${selfR.atk - prev})`) }
     }
   }
-  // 자신 방어 랭크
   if (r.def !== undefined) {
     if (r.def > 0) {
       const prev = selfR.def
@@ -145,7 +132,6 @@ function applyRankChanges(r, self, target, moveName) {
       else { const prev = selfR.def; selfR.def = Math.max(0, selfR.def + r.def); selfR.defTurns = r.turns ?? 2; msgs.push(`${self.name}의 방어가 내려갔다! (${selfR.def - prev})`) }
     }
   }
-  // 자신 스피드 랭크
   if (r.spd !== undefined) {
     if (r.spd > 0) {
       const prev = selfR.spd
@@ -157,7 +143,6 @@ function applyRankChanges(r, self, target, moveName) {
     }
   }
 
-  // 상대 공격 랭크
   if (r.targetAtk !== undefined) {
     if (r.targetAtk < 0) {
       if (targetR.atk === 0) msgs.push(`${target.name}의 공격은 더 이상 내려가지 않는다!`)
@@ -167,7 +152,6 @@ function applyRankChanges(r, self, target, moveName) {
       msgs.push(`${target.name}의 공격이 올라갔다! (+${targetR.atk - prev})`)
     }
   }
-  // 상대 방어 랭크
   if (r.targetDef !== undefined) {
     if (r.targetDef < 0) {
       if (targetR.def === 0) msgs.push(`${target.name}의 방어는 더 이상 내려가지 않는다!`)
@@ -177,7 +161,6 @@ function applyRankChanges(r, self, target, moveName) {
       msgs.push(`${target.name}의 방어가 올라갔다! (+${targetR.def - prev})`)
     }
   }
-  // 상대 스피드 랭크
   if (r.targetSpd !== undefined) {
     if (r.targetSpd < 0) {
       if (targetR.spd === 0) msgs.push(`${target.name}의 스피드는 더 이상 내려가지 않는다!`)
@@ -312,6 +295,27 @@ async function grantWinCoins(winnerName, data) {
     await updateDoc(doc(db, "users", myUid), { coins: increment(300) })
     await addLog("🏆 승리 보상으로 300ZP를 받았다!")
   } catch(e) { console.warn("코인 지급 실패", e) }
+}
+
+// ── 게임 로그를 games 서브컬렉션에 저장
+// leaveGame() 호출 전에 반드시 실행해야 함
+async function saveGameLog() {
+  // 스펙테이터나 p2는 저장 안 함 (p1만 저장 담당)
+  if (isSpectator || mySlot !== "p1") return
+  try {
+    const roomSnap = await getDoc(roomRef)
+    const data = roomSnap.data()
+    const logSnap = await getDocs(query(logsRef, orderBy("ts")))
+    const logs = logSnap.docs.map(d => ({ text: d.data().text, ts: d.data().ts }))
+    const gamesRef = collection(db, "rooms", ROOM_ID, "games")
+    await addDoc(gamesRef, {
+      p1:       data.player1_name ?? "???",
+      p2:       data.player2_name ?? "???",
+      winner:   data.winner ?? null,
+      logs,
+      createdAt: Date.now()
+    })
+  } catch(e) { console.warn("게임 로그 저장 실패", e) }
 }
 
 function animateDiceSingle(slot, finalRoll, p1Name, p2Name) {
@@ -484,8 +488,14 @@ async function leaveAsSpectator() {
 }
 
 async function leaveGame() {
+  // 1. 게임 로그 먼저 저장 (p1만 담당)
+  await saveGameLog()
+
+  // 2. logs 서브컬렉션 삭제
   const logSnap = await getDocs(logsRef)
   await Promise.all(logSnap.docs.map(d => deleteDoc(d.ref)))
+
+  // 3. 방 초기화
   await updateDoc(roomRef, {
     player1_uid: null, player1_name: null, player1_ready: false,
     player2_uid: null, player2_name: null, player2_ready: false,
@@ -564,7 +574,6 @@ async function switchPokemon(newIdx) {
   const myPokemon = myEntry[data[`${mySlot}_active_idx`]]
   const myName = mySlot === "p1" ? data.player1_name : data.player2_name
 
-  // 교체 시 랭크 스택 초기화
   resetRankStack(myPokemon)
 
   const prev = myPokemon.name, next = myEntry[newIdx].name
@@ -595,7 +604,6 @@ async function useMove(moveIdx, data) {
   const preAction = checkPreActionStatus(myPokemon)
   for (const msg of preAction.msgs) { await addLog(msg); await wait(350) }
   if (preAction.blocked) {
-    // 행동불가 시 랭크 스택 초기화
     resetRankStack(myPokemon)
     await updateDoc(roomRef, { [`${mySlot}_entry`]: myEntry, current_turn: enemySlot, turn_count: (freshData.turn_count ?? 1) + 1 })
     return
@@ -625,7 +633,6 @@ async function useMove(moveIdx, data) {
   await animateDiceSingle(mySlot, diceRoll, freshData.player1_name, freshData.player2_name)
   await updateDoc(roomRef, { dice_event: null })
 
-  // ── power: 0 → 랭크 전용 기술
   if (!moveInfo?.power) {
     const r = moveInfo?.rank
     const targetsEnemy = r && (r.targetAtk !== undefined || r.targetDef !== undefined || r.targetSpd !== undefined)
@@ -646,7 +653,6 @@ async function useMove(moveIdx, data) {
       }
     }
 
-    // 랭크 적용 (moveName 전달 → 스택 관리)
     const rankMsgs = applyRankChanges(r, myPokemon, enePokemon, moveData.name)
     for (const msg of rankMsgs) { await addLog(msg); await wait(300) }
     const rankEffectMsgs = applyMoveEffect(moveInfo?.effect, myPokemon, enePokemon, 0)
@@ -655,7 +661,6 @@ async function useMove(moveIdx, data) {
     return
   }
 
-  // ── power > 0 → 공격 기술
   const atkRank = getActiveRank(myPokemon, "atk"), defRankEne = getActiveRank(enePokemon, "def")
   let expiredMsgs = []
 
@@ -680,7 +685,6 @@ async function useMove(moveIdx, data) {
       if (critical) { showBattlePopup("enemy", "critical"); await addLog("급소에 맞았다!"); await wait(280) }
       const effectMsgs = applyMoveEffect(moveInfo?.effect, myPokemon, enePokemon, damage)
       for (const msg of effectMsgs) { await addLog(msg); await wait(280) }
-      // 공격 후 확률적 랭크 (moveName null → 스택 관리 안 함)
       if (moveInfo?.rank) {
         const rankMsgs = applyRankChanges(moveInfo.rank, myPokemon, enePokemon, null)
         for (const msg of rankMsgs) { await addLog(msg); await wait(280) }
@@ -692,7 +696,6 @@ async function useMove(moveIdx, data) {
   const weatherResult = applyWeatherEffect(moveInfo?.effect)
   if (weatherResult.weather) { for (const msg of weatherResult.msgs) { await addLog(msg); await wait(280) } }
 
-  // 데미지 처리 후 tick → 그다음 스택 초기화
   expiredMsgs = tickMyRanks(myPokemon)
   clearRankStack(myPokemon)
 
