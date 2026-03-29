@@ -45,11 +45,10 @@ export function applyVolatile(pokemon, volatile) {
 // ── damage 파라미터 추가 → drain75 지원
 export function applyMoveEffect(moveEffect, attacker, defender, damage = 0) {
   if (!moveEffect) return []
-  if (defender.hp <= 0) return []
 
   const msgs = []
 
-  // 흡수 (가한 피해의 drain 비율만큼 회복)
+  // 흡수: defender가 기절해도 가한 피해만큼은 회복해야 하므로 hp 체크 전에 처리
   if (moveEffect.drain) {
     const heal = Math.floor(damage * moveEffect.drain)
     if (heal > 0) {
@@ -58,6 +57,9 @@ export function applyMoveEffect(moveEffect, attacker, defender, damage = 0) {
     }
     return msgs
   }
+
+  // 이하 상태이상/상태변화 부여는 defender가 살아있을 때만
+  if (defender.hp <= 0) return []
 
   // 상태이상 부여
   if (moveEffect.status && Math.random() < moveEffect.chance) {
