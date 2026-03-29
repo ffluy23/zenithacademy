@@ -65,6 +65,7 @@ export const moves = {
   "번개":       { power: 60, type: "전기", accuracy: 70,  alwaysHit: false, effect: { chance: 0.3, status: "마비" } },
   "전기쇼크":   { power: 40, type: "전기", accuracy: 100, alwaysHit: false, effect: { chance: 0.1, status: "마비" } },
   "전기자석파": { power: 0, type: "전기", accuracy: 90, alwaysHit: false, targetSelf: false, effect: { chance: 1, status: "마비" } },
+  "충전": { power: 0, type: "전기", accuracy: 100, alwaysHit: true, targetSelf: true, effect: null, rank: { atk: 2, def: 1, turns: 1 } },
 
   // ───── 풀 ─────
   "에너지볼":   { power: 40, type: "풀", accuracy: 100, alwaysHit: false, effect: null },
